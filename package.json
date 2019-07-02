@@ -1,0 +1,23 @@
+{
+  "name": "@endereco/addresscheck",
+  "version": "1.0.0",
+  "description": "Service Client for Endereco Address Check",
+  "main": "AddressCheck.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Endereco/AddressCheck.git"
+  },
+  "keywords": [
+    "validation",
+    "addresscheck"
+  ],
+  "author": "Ilja Weber <ilja@endereco.de>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Endereco/AddressCheck/issues"
+  },
+  "homepage": "https://github.com/Endereco/AddressCheck#readme"
+}
