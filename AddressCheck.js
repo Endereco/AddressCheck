@@ -7,10 +7,20 @@
  */
 function AddressCheck(config) {
 
+    // Includes polyfill for IE
+    if (!Array.prototype.includes) {
+        Object.defineProperty(Array.prototype, "includes", {
+            enumerable: false,
+            value: function(obj) {
+                var newArr = this.filter(function(el) {
+                    return el == obj;
+                });
+                return newArr.length > 0;
+            }
+        });
+    }
+
     var $self  = this;
-    this.isSet = false;
-    this.tid = 'not_set';
-    this.config = config;
     this.requestBody = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -23,46 +33,91 @@ function AddressCheck(config) {
             "country": "de",
             "language": "de",
         }
-    }
-
+    };
+    this.defaultConfig = {
+        'checkOnBlur': true,
+        'useWatcher': true,
+        'tid': 'not_set'
+    };
+    this.fieldsAreSet = false;
+    this.dirty = false;
+    this.config = Object.assign(this.defaultConfig, config);
     this.connector = new XMLHttpRequest();
 
-    // Observe the website in a loop.
-    setInterval( function() {
-        var isNowSet = false;
+    /**
+     * Helper function to create events, thats are compatible with ie 11.
+     *
+     * @param eventName
+     * @returns {Event}
+     */
+    this.createEvent = function(eventName) {
+        var event;
+        if(typeof(Event) === 'function') {
+            event = new Event(eventName);
+        }else{
+            event = document.createEvent('Event');
+            event.initEvent(eventName, true, true);
+        }
+        return event;
+    }
+
+
+    /**
+     * Helper function to update existing config, overwriting existing fields.
+     *
+     * @param newConfig
+     */
+    this.updateConfig = function(newConfig) {
+        $self.config = Object.assign($self.config, newConfig);
+    }
+
+    /**
+     * Checks if fields are set.
+     */
+    this.checkIfFieldsAreSet = function() {
+        var areFieldsSet = false;
         if(
-            (null !== document.querySelector(config.streetSelector))
-            && (null !== document.querySelector(config.houseNumberSelector))
-            && (null !== document.querySelector(config.postCodeSelector))
-            && (null !== document.querySelector(config.cityNameSelector))
-            && (null !== document.querySelector(config.countrySelector))
+            (null !== document.querySelector($self.config.streetSelector))
+            && (null !== document.querySelector($self.config.houseNumberSelector))
+            && (null !== document.querySelector($self.config.postCodeSelector))
+            && (null !== document.querySelector($self.config.cityNameSelector))
+            && (null !== document.querySelector($self.config.countrySelector))
         ) {
-            isNowSet = true;
+            areFieldsSet = true;
         }
 
-        if (!$self.isSet && isNowSet) {
-            $self.init();
-        } else if($self.isSet && !isNowSet) {
-            $self.isSet = false;
+        if (!$self.fieldsAreSet && areFieldsSet) {
+
+            // Fields are now set. Mark addresscheck as dirty to trigger reinitiation.
+            $self.dirty = true;
+            $self.fieldsAreSet = true;
+        } else if($self.fieldsAreSet && !areFieldsSet) {
+
+            // Fields have been removed.
+            $self.fieldsAreSet = false;
         }
-    }, 300);
+    }
 
     this.init = function() {
-        console.log('Initiate AddressCheck');
-        $self.streetElement = document.querySelector(config.streetSelector);
-        $self.houseNumberElement = document.querySelector(config.houseNumberSelector);
-        $self.postCodeElement = document.querySelector(config.postCodeSelector);
-        $self.cityNameElement = document.querySelector(config.cityNameSelector);
-        $self.countryElement = document.querySelector(config.countrySelector);
-        $self.timeOut = undefined;
-        $self.overlay = undefined;
-        $self.predictions = [];
-        $self.anyChange = false;
-        $self.activeIndex = -1;
+
+        try {
+            $self.streetElement = document.querySelector($self.config.streetSelector);
+            $self.houseNumberElement = document.querySelector($self.config.houseNumberSelector);
+            $self.postCodeElement = document.querySelector($self.config.postCodeSelector);
+            $self.cityNameElement = document.querySelector($self.config.cityNameSelector);
+            $self.countryElement = document.querySelector($self.config.countrySelector);
+            $self.timeOut = undefined;
+            $self.overlay = undefined;
+            $self.predictions = [];
+            $self.anyChange = false;
+            $self.activeIndex = -1;
+        } catch(e) {
+            console.log('Could not initiate AddressCheck because of error:', e);
+        }
 
         // Generate TID if accounting service is set.
-        if (window.accounting) {
-            $self.tid = window.accounting.generateTID();
+        if (window.accounting && ('not_set' === $self.config.tid)) {
+            $self.config.tid = window.accounting.generateTID();
         }
 
         $self.streetElement.addEventListener('change', function() {
@@ -87,23 +142,78 @@ function AddressCheck(config) {
 
 
         $self.streetElement.addEventListener('blur', function() {
-            $self.runCheck();
+            if ($self.config.checkOnBlur){
+                $self.checkAddress().then( function($data) {
+                    $self.predictions = $data.result.predictions;
+
+                    if ($data.result.status.includes('A1000') && !$data.result.status.includes('A1100')) {
+                        $self.markSuccess();
+                    }
+                    if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
+                        $self.renderVariants();
+                    }
+                });
+            }
         });
 
         $self.houseNumberElement.addEventListener('blur', function() {
-            $self.runCheck();
+            if ($self.config.checkOnBlur){
+                $self.checkAddress().then( function($data) {
+                    $self.predictions = $data.result.predictions;
+
+                    if ($data.result.status.includes('A1000') && !$data.result.status.includes('A1100')) {
+                        $self.markSuccess();
+                    }
+                    if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
+                        $self.renderVariants();
+                    }
+                });
+            }
         });
 
         $self.postCodeElement.addEventListener('blur', function() {
-            $self.runCheck();
+            if ($self.config.checkOnBlur){
+                $self.checkAddress().then( function($data) {
+                    $self.predictions = $data.result.predictions;
+
+                    if ($data.result.status.includes('A1000') && !$data.result.status.includes('A1100')) {
+                        $self.markSuccess();
+                    }
+                    if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
+                        $self.renderVariants();
+                    }
+                });
+            }
         });
 
         $self.cityNameElement.addEventListener('blur', function() {
-            $self.runCheck();
+            if ($self.config.checkOnBlur){
+                $self.checkAddress().then( function($data) {
+                    $self.predictions = $data.result.predictions;
+
+                    if ($data.result.status.includes('A1000') && !$data.result.status.includes('A1100')) {
+                        $self.markSuccess();
+                    }
+                    if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
+                        $self.renderVariants();
+                    }
+                });
+            }
         });
 
         $self.countryElement.addEventListener('blur', function() {
-            $self.runCheck();
+            if ($self.config.checkOnBlur){
+                $self.checkAddress().then( function($data) {
+                    $self.predictions = $data.result.predictions;
+
+                    if ($data.result.status.includes('A1000') && !$data.result.status.includes('A1100')) {
+                        $self.markSuccess();
+                    }
+                    if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
+                        $self.renderVariants();
+                    }
+                });
+            }
         });
 
         $self.streetElement.addEventListener('focus', function() {
@@ -126,38 +236,47 @@ function AddressCheck(config) {
             $self.connector.abort();
         });
 
-        $self.isSet = true;
+        $self.dirty = false;
+        console.log('AddressCheck initiated');
     }
 
 
     this.isAnyFocused = function() {
-        streetFocused = (document.activeElement === $self.streetElement);
-        houseNumberFocused = (document.activeElement === $self.houseNumberElement);
-        postCodeFocused = (document.activeElement === $self.postCodeElement);
-        cityNameFocused = (document.activeElement === $self.cityNameElement);
-        countryFocused = (document.activeElement === $self.countryElement);
+        var streetFocused = (document.activeElement === $self.streetElement);
+        var houseNumberFocused = (document.activeElement === $self.houseNumberElement);
+        var postCodeFocused = (document.activeElement === $self.postCodeElement);
+        var cityNameFocused = (document.activeElement === $self.cityNameElement);
+        var countryFocused = (document.activeElement === $self.countryElement);
         return streetFocused || houseNumberFocused || postCodeFocused || cityNameFocused || countryFocused;
     }
 
     this.isAnyEmpty = function() {
-        streetEmpty = ('' === $self.streetElement.value.trim());
-        houseNumberEmpty = ('' === $self.houseNumberElement.value.trim());
-        postCodeEmpty = ('' === $self.postCodeElement.value.trim());
-        cityNameEmpty = ('' === $self.cityNameElement.value.trim());
-        countryEmpty = ('' === $self.countryElement.value.trim());
+        var streetEmpty = ('' === $self.streetElement.value.trim());
+        var houseNumberEmpty = ('' === $self.houseNumberElement.value.trim());
+        var postCodeEmpty = ('' === $self.postCodeElement.value.trim());
+        var cityNameEmpty = ('' === $self.cityNameElement.value.trim());
+
+        var originalValue = $self.countryElement.options[$self.countryElement.selectedIndex].value;
+        var setValues = $self.countryElement.options[$self.countryElement.selectedIndex].getAttribute('data-code');
+
+        var countryEmpty = ('' === setValues && '' === originalValue);
+
         return streetEmpty || houseNumberEmpty || postCodeEmpty || cityNameEmpty || countryEmpty;
     }
 
     this.removeOverlay = function() {
         if (undefined !== $self.overlay) {
-            $self.overlay.remove();
+            $self.overlay.parentElement.removeChild($self.overlay);
             $self.overlay = undefined;
         }
     }
 
+    /**
+     * Send endereco.valid events to
+     */
     this.markSuccess = function() {
         // Mark all fields as valid, because its selected
-        var event = new Event('endereco.valid');
+        var event = $self.createEvent('endereco.valid');
         $self.streetElement.dispatchEvent(event);
         $self.houseNumberElement.dispatchEvent(event);
         $self.postCodeElement.dispatchEvent(event);
@@ -165,39 +284,79 @@ function AddressCheck(config) {
         $self.countryElement.dispatchEvent(event);
     }
 
-    this.runCheck = function() {
+    /**
+     * Send endereco.valid events to
+     */
+    this.markNeutral = function() {
+        // Clean all markings.
+        var event = $self.createEvent('endereco.clean');
+        $self.streetElement.dispatchEvent(event);
+        $self.houseNumberElement.dispatchEvent(event);
+        $self.postCodeElement.dispatchEvent(event);
+        $self.cityNameElement.dispatchEvent(event);
+        $self.countryElement.dispatchEvent(event);
+    }
 
-        if (false === $self.anyChange) {
+    // Reads the values from address fields and sends them to api. Returns promise.
+    this.checkAddress = function(force = false) {
+
+        if (false === $self.anyChange && !force) {
             return false;
         }
 
+        // If there is a running check, it should be canceled.
         if (undefined !== $self.timeOut) {
             clearTimeout($self.timeOut);
         }
 
-        $self.timeOut = setTimeout(function() {
-            if (!$self.isAnyFocused() && !$self.isAnyEmpty()) {
-                $self.anyChange = false;
-                $self.requestBody.params.street = $self.streetElement.value.trim();
-                $self.requestBody.params.houseNumber = $self.houseNumberElement.value.trim();
-                $self.requestBody.params.postCode = $self.postCodeElement.value.trim();
-                $self.requestBody.params.cityName = $self.cityNameElement.value.trim();
-                $self.requestBody.params.country = $self.countryElement.getAttribute('data-value').trim();
-                $self.connector.abort();
-                $self.streetElement.setAttribute('data-status', 'loading');
-                $self.houseNumberElement.setAttribute('data-status', 'loading');
-                $self.postCodeElement.setAttribute('data-status', 'loading');
-                $self.cityNameElement.setAttribute('data-status', 'loading');
-                $self.countryElement.setAttribute('data-status', 'loading');
-                $self.connector.open('POST', $self.config.endpoint, true);
-                $self.connector.setRequestHeader("Content-type", "application/json");
-                $self.connector.setRequestHeader("X-Auth-Key", $self.config.apiKey);
-                $self.connector.setRequestHeader("X-Transaction-Id", $self.tid);
-                $self.connector.setRequestHeader("X-Transaction-Referer", window.location.href);
+        return new Promise(function(resolve, reject) {
+            $self.timeOut = setTimeout(function() {
+                if ((!$self.isAnyFocused() && !$self.isAnyEmpty()) || force) {
 
-                $self.connector.send(JSON.stringify($self.requestBody));
-            }
-        }, 1);
+
+                    $self.connector.onreadystatechange = function() {
+                        if(4 === $self.connector.readyState && $self.connector.responseText && '' !== $self.connector.responseText) {
+
+                            try {
+                                $data = JSON.parse($self.connector.responseText);
+                            } catch(e) {
+                                console.log('Parsing error', e);
+                                reject($data);
+                            }
+
+                            if ($data.error || !$data.result) {
+                                reject($data);
+                            }
+
+                            resolve($data);
+                        }
+                    }
+
+                    $self.anyChange = false;
+                    $self.requestBody.params.street = $self.streetElement.value.trim();
+                    $self.requestBody.params.houseNumber = $self.houseNumberElement.value.trim();
+                    $self.requestBody.params.postCode = $self.postCodeElement.value.trim();
+                    $self.requestBody.params.cityName = $self.cityNameElement.value.trim();
+                    $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].getAttribute('data-code');
+
+                    // Fallback.
+                    if ('' === $self.requestBody.params.country || undefined === $self.requestBody.params.country) {
+                        $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].value;
+                    }
+
+                    $self.connector.abort();
+                    $self.connector.open('POST', $self.config.endpoint, true);
+                    $self.connector.setRequestHeader("Content-type", "application/json");
+                    $self.connector.setRequestHeader("X-Auth-Key", $self.config.apiKey);
+                    $self.connector.setRequestHeader("X-Transaction-Id", $self.config.tid);
+                    $self.connector.setRequestHeader("X-Transaction-Referer", window.location.href);
+
+                    $self.connector.send(JSON.stringify($self.requestBody));
+
+
+                }
+            }, 1);
+        });
     }
 
     this.renderVariants = function() {
@@ -370,22 +529,16 @@ function AddressCheck(config) {
         document.body.appendChild(overlay_element);
     }
 
-    // On data receive
-    this.connector.onreadystatechange = function() {
-        if(4 === $self.connector.readyState) {
-            if ($self.connector.responseText && '' !== $self.connector.responseText) {
-                $data = JSON.parse($self.connector.responseText);
-                if (undefined !== $data.result) {
-                    $self.predictions = $data.result.predictions;
-                    if ($data.result.status.includes('A1000') && !$data.result.status.includes('A1100')) {
-                        $self.markSuccess();
-                    }
-                    if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
-                        $self.renderVariants();
-                    }
-                }
-            }
+
+    // Service loop.
+    setInterval( function() {
+
+        if ($self.config.useWatcher) {
+            $self.checkIfFieldsAreSet();
         }
 
-    }
+        if ($self.dirty) {
+            $self.init();
+        }
+    }, 300);
 }
