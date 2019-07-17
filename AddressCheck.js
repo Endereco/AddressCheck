@@ -113,6 +113,7 @@ function AddressCheck(config) {
             $self.activeIndex = -1;
         } catch(e) {
             console.log('Could not initiate AddressCheck because of error:', e);
+            return;
         }
 
         // Generate TID if accounting service is set.
@@ -152,7 +153,7 @@ function AddressCheck(config) {
                     if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
                         $self.renderVariants();
                     }
-                });
+                }, function($data){});
             }
         });
 
@@ -167,7 +168,12 @@ function AddressCheck(config) {
                     if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
                         $self.renderVariants();
                     }
-                });
+                }, function($data){});
+            }
+
+            if ('' === this.value) {
+                var event = $self.createEvent('endereco.clean');
+                $self.houseNumberElement.dispatchEvent(event);
             }
         });
 
@@ -182,7 +188,7 @@ function AddressCheck(config) {
                     if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
                         $self.renderVariants();
                     }
-                });
+                }, function($data){});
             }
         });
 
@@ -197,7 +203,7 @@ function AddressCheck(config) {
                     if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
                         $self.renderVariants();
                     }
-                });
+                }, function($data){});
             }
         });
 
@@ -212,7 +218,12 @@ function AddressCheck(config) {
                     if ($data.result.predictions.length > 1 || $data.result.status.includes('A1100')) {
                         $self.renderVariants();
                     }
-                });
+                }, function($data){});
+            }
+
+            if ('' === this.value) {
+                var event = $self.createEvent('endereco.clean');
+                $self.countryElement.dispatchEvent(event);
             }
         });
 
@@ -299,24 +310,13 @@ function AddressCheck(config) {
 
     // Reads the values from address fields and sends them to api. Returns promise.
     this.checkAddress = function(force = false) {
-
-        if (false === $self.anyChange && !force) {
-            return false;
-        }
-
-        // If there is a running check, it should be canceled.
-        if (undefined !== $self.timeOut) {
-            clearTimeout($self.timeOut);
-        }
-
         return new Promise(function(resolve, reject) {
-            $self.timeOut = setTimeout(function() {
-                if ((!$self.isAnyFocused() && !$self.isAnyEmpty()) || force) {
-
-
-                    $self.connector.onreadystatechange = function() {
-                        if(4 === $self.connector.readyState && $self.connector.responseText && '' !== $self.connector.responseText) {
-
+            var $data = {};
+            if ((!$self.isAnyFocused() && !$self.isAnyEmpty()) || force) {
+                $self.connector.onreadystatechange = function() {
+                    if(4 === $self.connector.readyState) {
+                        $data = {};
+                        if ($self.connector.responseText && '' !== $self.connector.responseText) {
                             try {
                                 $data = JSON.parse($self.connector.responseText);
                             } catch(e) {
@@ -327,35 +327,34 @@ function AddressCheck(config) {
                             if ($data.error || !$data.result) {
                                 reject($data);
                             }
-
                             resolve($data);
+                        }  else {
+                            reject($data);
                         }
                     }
+                };
 
-                    $self.anyChange = false;
-                    $self.requestBody.params.street = $self.streetElement.value.trim();
-                    $self.requestBody.params.houseNumber = $self.houseNumberElement.value.trim();
-                    $self.requestBody.params.postCode = $self.postCodeElement.value.trim();
-                    $self.requestBody.params.cityName = $self.cityNameElement.value.trim();
-                    $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].getAttribute('data-code');
+                $self.anyChange = false;
+                $self.requestBody.params.street = $self.streetElement.value.trim();
+                $self.requestBody.params.houseNumber = $self.houseNumberElement.value.trim();
+                $self.requestBody.params.postCode = $self.postCodeElement.value.trim();
+                $self.requestBody.params.cityName = $self.cityNameElement.value.trim();
+                $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].getAttribute('data-code');
 
-                    // Fallback.
-                    if ('' === $self.requestBody.params.country || undefined === $self.requestBody.params.country) {
-                        $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].value;
-                    }
-
-                    $self.connector.abort();
-                    $self.connector.open('POST', $self.config.endpoint, true);
-                    $self.connector.setRequestHeader("Content-type", "application/json");
-                    $self.connector.setRequestHeader("X-Auth-Key", $self.config.apiKey);
-                    $self.connector.setRequestHeader("X-Transaction-Id", $self.config.tid);
-                    $self.connector.setRequestHeader("X-Transaction-Referer", window.location.href);
-
-                    $self.connector.send(JSON.stringify($self.requestBody));
-
-
+                // Fallback.
+                if ('' === $self.requestBody.params.country || undefined === $self.requestBody.params.country) {
+                    $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].value;
                 }
-            }, 1);
+                $self.connector.open('POST', $self.config.endpoint, true);
+                $self.connector.setRequestHeader("Content-type", "application/json");
+                $self.connector.setRequestHeader("X-Auth-Key", $self.config.apiKey);
+                $self.connector.setRequestHeader("X-Transaction-Id", $self.config.tid);
+                $self.connector.setRequestHeader("X-Transaction-Referer", window.location.href);
+
+                $self.connector.send(JSON.stringify($self.requestBody));
+            } else {
+                reject({});
+            }
         });
     }
 
