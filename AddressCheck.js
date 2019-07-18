@@ -20,6 +20,18 @@ function AddressCheck(config) {
         });
     }
 
+    /**
+     * Combine object, IE 11 compatible.
+     */
+    this.mergeObjects = function(objects) {
+        return objects.reduce(function (r, o) {
+            Object.keys(o).forEach(function (k) {
+                r[k] = o[k];
+            });
+            return r;
+        }, {})
+    };
+
     var $self  = this;
     this.requestBody = {
         "jsonrpc": "2.0",
@@ -41,7 +53,7 @@ function AddressCheck(config) {
     };
     this.fieldsAreSet = false;
     this.dirty = false;
-    this.config = Object.assign(this.defaultConfig, config);
+    this.config = $self.mergeObjects([this.defaultConfig, config]);
     this.connector = new XMLHttpRequest();
 
     /**
@@ -59,8 +71,7 @@ function AddressCheck(config) {
             event.initEvent(eventName, true, true);
         }
         return event;
-    }
-
+    };
 
     /**
      * Helper function to update existing config, overwriting existing fields.
@@ -68,7 +79,7 @@ function AddressCheck(config) {
      * @param newConfig
      */
     this.updateConfig = function(newConfig) {
-        $self.config = Object.assign($self.config, newConfig);
+        $self.config = $self.mergeObjects([$self.config, newConfig]);
     }
 
     /**
@@ -306,10 +317,13 @@ function AddressCheck(config) {
         $self.postCodeElement.dispatchEvent(event);
         $self.cityNameElement.dispatchEvent(event);
         $self.countryElement.dispatchEvent(event);
-    }
+    };
 
     // Reads the values from address fields and sends them to api. Returns promise.
-    this.checkAddress = function(force = false) {
+    this.checkAddress = function(force) {
+        if(force === undefined) {
+            force = false;
+        }
         return new Promise(function(resolve, reject) {
             var $data = {};
             if ((!$self.isAnyFocused() && !$self.isAnyEmpty()) || force) {
