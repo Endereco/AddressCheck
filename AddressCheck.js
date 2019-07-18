@@ -49,7 +49,8 @@ function AddressCheck(config) {
     this.defaultConfig = {
         'checkOnBlur': true,
         'useWatcher': true,
-        'tid': 'not_set'
+        'tid': 'not_set',
+        'defaultCountry': 'de'
     };
     this.fieldsAreSet = false;
     this.dirty = false;
@@ -278,12 +279,7 @@ function AddressCheck(config) {
         var postCodeEmpty = ('' === $self.postCodeElement.value.trim());
         var cityNameEmpty = ('' === $self.cityNameElement.value.trim());
 
-        var originalValue = $self.countryElement.options[$self.countryElement.selectedIndex].value;
-        var setValues = $self.countryElement.options[$self.countryElement.selectedIndex].getAttribute('data-code');
-
-        var countryEmpty = ('' === setValues && '' === originalValue);
-
-        return streetEmpty || houseNumberEmpty || postCodeEmpty || cityNameEmpty || countryEmpty;
+        return streetEmpty || houseNumberEmpty || postCodeEmpty || cityNameEmpty;
     }
 
     this.removeOverlay = function() {
@@ -303,8 +299,10 @@ function AddressCheck(config) {
         $self.houseNumberElement.dispatchEvent(event);
         $self.postCodeElement.dispatchEvent(event);
         $self.cityNameElement.dispatchEvent(event);
-        $self.countryElement.dispatchEvent(event);
-    }
+        if ('' !== $self.countryElement.value) {
+            $self.countryElement.dispatchEvent(event);
+        }
+    };
 
     /**
      * Send endereco.valid events to
@@ -354,6 +352,10 @@ function AddressCheck(config) {
                 $self.requestBody.params.postCode = $self.postCodeElement.value.trim();
                 $self.requestBody.params.cityName = $self.cityNameElement.value.trim();
                 $self.requestBody.params.country = $self.countryElement.options[$self.countryElement.selectedIndex].getAttribute('data-code');
+
+                if ('' === $self.requestBody.params.country) {
+                    $self.requestBody.params.country = $self.config.defaultCountry;
+                }
 
                 // Fallback.
                 if ('' === $self.requestBody.params.country || undefined === $self.requestBody.params.country) {
