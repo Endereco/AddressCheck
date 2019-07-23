@@ -375,9 +375,27 @@ function AddressCheck(config) {
     }
 
     this.renderVariants = function() {
+        var overlay_element;
+
+        /**
+         * TODO: remove in future version
+         *
+         * This code checks if the fields have been emptied while the remote server is processing the request. Oxid Shop does such things.
+         * In future version remote server should return original input.
+         */
+        if($self.isAnyEmpty()) {
+            return;
+        }
+
+        overlay_element = document.getElementById('endereco-acresscheck-overlay');
+        if(overlay_element) {
+            overlay_element.parentElement.removeChild(overlay_element);
+        }
+
         // Create overlay
         overlay_element = document.createElement('div');
         $self.overlay = overlay_element;
+        overlay_element.id = 'endereco-acresscheck-overlay';
         overlay_element.style.position = 'fixed';
         overlay_element.style.padding = '0';
         overlay_element.style.top = '0';
