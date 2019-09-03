@@ -225,7 +225,7 @@ function AddressCheck(config) {
                 $self.renderVariants();
             }
 
-            if ($data.cmd.use_tid) {
+            if ($data.cmd && $data.cmd.use_tid) {
                 console.log('TID is transmitted');
                 $self.config.tid = $data.cmd.use_tid;
 
@@ -358,19 +358,15 @@ function AddressCheck(config) {
             // If global register doenst exists, create it.
             if (undefined === window.enderecoGlobal.popupId) {
                 window.enderecoGlobal.popupId = '';
-                return;
             }
 
             // If global register is empty, write your own id.
             if ('' === window.enderecoGlobal.popupId) {
-                console.log('register is empty, write custom id');
                 window.enderecoGlobal.popupId = randomId;
-                return;
             }
 
             // If global register has random id, render the form.
             if (randomId === window.enderecoGlobal.popupId) {
-                console.log('Render the mask');
                 overlay_element = document.getElementById('endereco-acresscheck-overlay');
                 if(overlay_element) {
                     overlay_element.parentElement.removeChild(overlay_element);
@@ -548,9 +544,6 @@ function AddressCheck(config) {
                 clearInterval(popUpJob);
                 return;
             }
-
-            console.log('Waiting for current popup to be closed.');
-
         }, 300);
     }
 
