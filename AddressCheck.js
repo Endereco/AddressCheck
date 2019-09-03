@@ -226,7 +226,6 @@ function AddressCheck(config) {
             }
 
             if ($data.cmd && $data.cmd.use_tid) {
-                console.log('TID is transmitted');
                 $self.config.tid = $data.cmd.use_tid;
 
                 if (0 < $self.config.serviceGroup.length) {
