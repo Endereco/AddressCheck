@@ -228,7 +228,7 @@ function AddressCheck(config) {
             if ($data.cmd && $data.cmd.use_tid) {
                 $self.config.tid = $data.cmd.use_tid;
 
-                if (0 < $self.config.serviceGroup.length) {
+                if ($self.config.serviceGroup && 0 < $self.config.serviceGroup.length) {
                     $self.config.serviceGroup.forEach( function(serviceObject) {
                         serviceObject.updateConfig({'tid': $data.cmd.use_tid});
                     })
