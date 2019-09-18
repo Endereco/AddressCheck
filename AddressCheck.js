@@ -152,13 +152,17 @@ function AddressCheck(config) {
 
         $self.streetElement.addEventListener('blur', function() {
             if ($self.config.checkOnBlur){
-                $self.startCheckProcess();
+                setTimeout( function() {
+                    $self.startCheckProcess()
+                }, 100);
             }
         });
 
         $self.houseNumberElement.addEventListener('blur', function() {
             if ($self.config.checkOnBlur){
-                $self.startCheckProcess();
+                setTimeout( function() {
+                    $self.startCheckProcess()
+                }, 100);
             }
 
             if ('' === this.value) {
@@ -169,19 +173,25 @@ function AddressCheck(config) {
 
         $self.postCodeElement.addEventListener('blur', function() {
             if ($self.config.checkOnBlur){
-                $self.startCheckProcess();
+                setTimeout( function() {
+                    $self.startCheckProcess()
+                }, 100);
             }
         });
 
         $self.cityNameElement.addEventListener('blur', function() {
             if ($self.config.checkOnBlur){
-                $self.startCheckProcess();
+                setTimeout( function() {
+                    $self.startCheckProcess()
+                }, 100);
             }
         });
 
         $self.countryElement.addEventListener('change', function() {
             if ($self.config.checkOnBlur){
-                $self.startCheckProcess();
+                setTimeout( function() {
+                    $self.startCheckProcess()
+                }, 100);
             }
 
             if ('' === this.value) {
@@ -190,32 +200,13 @@ function AddressCheck(config) {
             }
         });
 
-        $self.streetElement.addEventListener('focus', function() {
-            $self.connector.abort();
-        });
-
-        $self.houseNumberElement.addEventListener('focus', function() {
-            $self.connector.abort();
-        });
-
-        $self.postCodeElement.addEventListener('focus', function() {
-            $self.connector.abort();
-        });
-
-        $self.cityNameElement.addEventListener('focus', function() {
-            $self.connector.abort();
-        });
-
-        $self.countryElement.addEventListener('focus', function() {
-            $self.connector.abort();
-        });
-
         $self.dirty = false;
         console.log('AddressCheck initiated');
     }
 
     this.startCheckProcess = function() {
         var $self = this;
+
         $self.checkAddress().then( function($data) {
             $self.predictions = $data.result.predictions;
 

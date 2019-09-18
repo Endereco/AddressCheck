@@ -1,6 +1,6 @@
 {
   "name": "@endereco/addresscheck",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Service Client for Endereco Address Check",
   "main": "AddressCheck.js",
   "scripts": {
