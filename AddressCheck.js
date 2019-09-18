@@ -48,6 +48,7 @@ function AddressCheck(config) {
     };
     this.defaultConfig = {
         'checkOnBlur': true,
+        'referer': 'not_set',
         'useWatcher': true,
         'tid': 'not_set',
         'defaultCountry': 'de'
