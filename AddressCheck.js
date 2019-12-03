@@ -55,6 +55,7 @@ function AddressCheck(config) {
     };
     this.fieldsAreSet = false;
     this.dirty = false;
+    this.wip = false;
     this.config = $self.mergeObjects([this.defaultConfig, config]);
     this.connector = new XMLHttpRequest();
 
@@ -206,6 +207,7 @@ function AddressCheck(config) {
 
     this.startCheckProcess = function() {
         var $self = this;
+        $self.wip = true;
 
         $self.checkAddress().then( function($data) {
             $self.predictions = $data.result.predictions;
@@ -227,7 +229,11 @@ function AddressCheck(config) {
                 }
             }
 
-        }, function($data){});
+            $self.wip = false;
+
+        }, function($data){
+            $self.wip = false;
+        });
     };
 
 
