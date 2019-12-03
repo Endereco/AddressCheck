@@ -56,6 +56,8 @@ function AddressCheck(config) {
     this.fieldsAreSet = false;
     this.dirty = false;
     this.wip = false;
+    this.successCallback = [];
+    this.errorCallback = [];
     this.config = $self.mergeObjects([this.defaultConfig, config]);
     this.connector = new XMLHttpRequest();
 
@@ -230,9 +232,15 @@ function AddressCheck(config) {
             }
 
             $self.wip = false;
+            $self.successCallback.forEach(function(callback) {
+                callback($data);
+            })
 
         }, function($data){
             $self.wip = false;
+            $self.errorCallback.forEach(function(callback) {
+                callback($data);
+            })
         });
     };
 
