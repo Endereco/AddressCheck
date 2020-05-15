@@ -257,7 +257,13 @@ function AddressCheck(config) {
 
     this.isAnyEmpty = function() {
         var streetEmpty = ('' === $self.streetElement.value.trim());
-        var houseNumberEmpty = ('' === $self.houseNumberElement.value.trim());
+        var houseNumberEmpty;
+        if ($self.houseNumberElement.hasAttribute('required')) {
+            houseNumberEmpty = ('' === $self.houseNumberElement.value.trim());
+        } else {
+            houseNumberEmpty = false;
+        }
+
         var postCodeEmpty = ('' === $self.postCodeElement.value.trim());
         var cityNameEmpty = ('' === $self.cityNameElement.value.trim());
 
