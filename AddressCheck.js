@@ -395,6 +395,9 @@ function AddressCheck(config) {
 
                 // Create overlay
                 overlay_element = document.createElement('div');
+
+                var direction = getComputedStyle($self.streetElement).direction;
+
                 $self.overlay = overlay_element;
                 overlay_element.id = 'endereco-acresscheck-overlay';
                 if ($self.config.useInlineStyles) {
@@ -409,6 +412,7 @@ function AddressCheck(config) {
                     overlay_element.style.justifyContent = 'center';
                     overlay_element.style.alignItems = 'center';
                     overlay_element.style.backgroundColor = 'rgba(0, 0, 0, 0.25)';
+                    overlay_element.style.direction = direction;
                 }
 
                 // Window
