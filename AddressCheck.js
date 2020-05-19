@@ -500,7 +500,11 @@ function AddressCheck(config) {
                 default_cb_element.setAttribute('name', 'endereco-radio');
                 default_cb_element.checked = true;
                 if ($self.config.useInlineStyles) {
-                    default_cb_element.style.marginRight = '10px';
+                    if ('rtl' === direction) {
+                        default_cb_element.style.marginLeft = '10px';
+                    } else {
+                        default_cb_element.style.marginRight = '10px';
+                    }
                     default_cb_element.style.boxSizing = 'border-box';
                 }
 
@@ -543,7 +547,11 @@ function AddressCheck(config) {
                     default_cb_element.setAttribute('type', 'radio');
                     default_cb_element.setAttribute('name', 'endereco-radio');
                     if ($self.config.useInlineStyles) {
-                        default_cb_element.style.marginRight = '10px';
+                        if ('rtl' === direction) {
+                            default_cb_element.style.marginLeft = '10px';
+                        } else {
+                            default_cb_element.style.marginRight = '10px';
+                        }
                         default_cb_element.style.boxSizing = 'border-box';
                     }
 
